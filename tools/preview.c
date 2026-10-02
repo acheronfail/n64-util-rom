@@ -38,6 +38,8 @@ int main(int argc,char **argv) {
     update(&a,true,0,0,0,16);
     if(argc>1 && strcmp(argv[1],"menu")) {
         update(&a,true,BTN_A,0,0,16);
+        update(&a,true,0,0,0,16);
+        update(&a,true,BTN_A,0,0,16);
         for(int i=0;i<128;i++) {
             float t=i*6.2831853f/128;
             update(&a,true,0,85*cosf(t),85*sinf(t),16);
@@ -85,6 +87,7 @@ int main(int argc,char **argv) {
     if(argc>1 && !strcmp(argv[1],"pak-format")) {
         a.pak_write=(PakWrite){.action=PAK_ACTION_FORMAT,.phase=WRITE_CONFIRM,.hold_ms=800};
     }
+    if(argc>1 && !strcmp(argv[1],"calibration")) a.calibration_notice=true;
     puts("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 240' width='960' height='720'>");
     ui_draw(&a);
     puts("</svg>");

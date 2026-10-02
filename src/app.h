@@ -20,6 +20,9 @@ typedef struct {
 } Input;
 typedef struct {
     bool connected, start_armed;
+    bool navigation_ready;
+    uint16_t navigation_direction;
+    unsigned navigation_repeat_ms;
     uint16_t buttons;
     int x, y, min_x, max_x, min_y, max_y;
     unsigned count, next;
@@ -27,6 +30,7 @@ typedef struct {
 } Controller;
 typedef struct {
     bool testing, controls_armed, audio_playing, pak_refresh;
+    bool calibration_notice;
     PakInspector pak;
     PakWrite pak_write;
     Tool tool;

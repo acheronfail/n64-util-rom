@@ -17,12 +17,21 @@ The compact main menu contains **Controller test**, **Rumble Pak test**,
 
 ## Controls
 
-Use the D-pad to choose a utility. Press **A** or **Start** on any connected N64 controller to open it for
+Use the stick or D-pad to choose a utility. Press **A** or **Start** on any connected N64 controller to open it for
 that port. P1–P4 at the top show connection status; the active port is highlighted
 and underlined, and disconnected ports are dimmed.
 
+The stick also scrolls Pak notes and changes audio frequency/channel. Tilt to
+step once; holding repeats after 400 ms, then every 120 ms. A dead zone avoids
+drift, and returning to center after entering or switching tools enables navigation.
+
+Opening Controller test shows a calibration tip: let the stick return to center,
+then hold L + R and press Start to reset its neutral position. A fresh button
+press on any controller dismisses the tip without switching ports or exiting.
+
 - Hold **Start on the active controller for 1.2 seconds** to return to the menu.
-- Hold **Start on another controller for 1.2 seconds** to switch to it. A bar
+- In **Controller test**, press **Start on another controller** to switch immediately.
+- In other utilities, hold **Start on another controller for 1.2 seconds** to switch to it. A bar
   labelled `Switch to P2` (or the relevant port) fills while holding.
 - Release early or unplug the requesting controller to cancel the gesture.
 - After opening, switching, or exiting, release any held Start buttons before
@@ -74,7 +83,7 @@ A browser for standard Controller Pak save directories. Browsing and rescanning
 are read-only; explicit write operations have a separate confirmation screen. Use D-pad
 **up/down** to select a note, **B** to toggle details, and **A** to rescan.
 Hold Start to exit or hold Start on another controller to switch ports, as in
-the other utilities. The list pages automatically after six notes.
+the rumble and audio tests. The list pages automatically after six notes.
 
 The inspector shows used/free capacity out of 123 usable 256-byte blocks,
 occupied directory slots out of 16, save names and per-save block counts.

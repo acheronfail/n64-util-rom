@@ -1,6 +1,29 @@
 #include "app.h"
 #include <string.h>
 
+/* Separate UI events from raw buttons so the tester always shows real input. */
+static uint16_t stick_navigation(Controller *p,bool enabled,bool horizontal,unsigned ms) {
+    int x=horizontal?p->x:0, y=p->y;
+    int ax=x<0?-x:x, ay=y<0?-y:y;
+    if(!enabled) { p->navigation_ready=false; p->navigation_direction=0; return 0; }
+    if(ax<24 && ay<24) {
+        p->navigation_ready=true; p->navigation_direction=0; return 0;
+    }
+    if(!p->navigation_ready) return 0;
+    if(ax<40 && ay<40) return 0;
+    uint16_t direction=ay>=ax ? (y>0?BTN_DU:BTN_DD) : (x>0?BTN_DR:BTN_DL);
+    if(direction!=p->navigation_direction) {
+        p->navigation_direction=direction; p->navigation_repeat_ms=400;
+        return direction;
+    }
+    if(ms>=p->navigation_repeat_ms) {
+        p->navigation_repeat_ms=120;
+        return direction;
+    }
+    p->navigation_repeat_ms-=ms;
+    return 0;
+}
+
 static void reset_history(Controller *p) {
     p->count = p->next = 0;
     p->min_x = p->max_x = p->x;
@@ -11,6 +34,10 @@ static void reset_gesture(App *a) {
     a->gesture_port = a->hold_ms = 0;
     for (unsigned i=0; i<PORT_COUNT; i++)
         a->ports[i].start_armed = !(a->ports[i].buttons & BTN_START);
+    for (unsigned i=0; i<PORT_COUNT; i++) {
+        a->ports[i].navigation_ready=false;
+        a->ports[i].navigation_direction=0;
+    }
 }
 
 static void stop_outputs(App *a) {
@@ -36,6 +63,7 @@ void app_update(App *a, const Input inputs[PORT_COUNT], unsigned ms) {
     a->pak_refresh=false;
     PakWrite *job=&a->pak_write;
     uint16_t down[PORT_COUNT] = {0};
+    uint16_t navigation[PORT_COUNT] = {0};
     for (unsigned i=0; i<PORT_COUNT; i++) {
         Controller *p = &a->ports[i];
         const Input *in = &inputs[i];
@@ -50,15 +78,21 @@ void app_update(App *a, const Input inputs[PORT_COUNT], unsigned ms) {
         p->x = in->x; p->y = in->y;
         if (reconnect) reset_history(p);
         if (!(p->buttons & BTN_START)) p->start_armed = true;
+        bool navigable=!a->testing || (!a->calibration_notice && i==a->active_port &&
+            (a->tool==TOOL_AUDIO || (a->tool==TOOL_PAK && job->phase==WRITE_IDLE)));
+        navigation[i]=stick_navigation(p,navigable,a->testing && a->tool==TOOL_AUDIO,ms);
+        const unsigned directions=BTN_DU|BTN_DD|BTN_DL|BTN_DR;
+        if(p->buttons&directions) navigation[i]=down[i]&directions;
+        else navigation[i]|=down[i]&directions;
     }
     if (!a->testing) {
         /* One navigation action per frame, from the first participating port. */
         for(unsigned i=0;i<PORT_COUNT;i++) {
-            if(down[i] & BTN_DU) {
+            if(navigation[i] & BTN_DU) {
                 a->menu_index=(a->menu_index+TOOL_COUNT-1)%TOOL_COUNT;
                 break;
             }
-            if(down[i] & BTN_DD) {
+            if(navigation[i] & BTN_DD) {
                 a->menu_index=(a->menu_index+1)%TOOL_COUNT;
                 break;
             }
@@ -68,15 +102,28 @@ void app_update(App *a, const Input inputs[PORT_COUNT], unsigned ms) {
             if (!(down[i] & (BTN_A | BTN_START))) continue;
             a->testing = true;
             a->tool = (Tool)a->menu_index;
+            a->calibration_notice = a->tool==TOOL_CONTROLLER;
             a->tone_index = 1;
             a->audio_channel = 1;
             stop_outputs(a);
             a->active_port = i;
             for (unsigned j=0; j<PORT_COUNT; j++) reset_history(&a->ports[j]);
             reset_gesture(a);
+            memset(navigation,0,sizeof(navigation));
+            if(a->calibration_notice) return;
             break;
         }
         if (!a->testing) return;
+    }
+    if(a->calibration_notice) {
+        for(unsigned i=0;i<PORT_COUNT;i++) {
+            if(!down[i]) continue;
+            a->calibration_notice=false;
+            for(unsigned j=0;j<PORT_COUNT;j++) reset_history(&a->ports[j]);
+            reset_gesture(a);
+            break;
+        }
+        return;
     }
     Controller *active=&a->ports[a->active_port];
     if(!active->connected) stop_outputs(a);
@@ -95,7 +142,7 @@ void app_update(App *a, const Input inputs[PORT_COUNT], unsigned ms) {
             a->controls_armed=false;
         }
     } else if(a->tool==TOOL_AUDIO) {
-        unsigned pressed=down[a->active_port];
+        unsigned pressed=down[a->active_port]|navigation[a->active_port];
         if(pressed&BTN_DL) a->audio_channel=(a->audio_channel+2)%3;
         if(pressed&BTN_DR) a->audio_channel=(a->audio_channel+1)%3;
         if(pressed&BTN_DU) a->tone_index=(a->tone_index+1)%3;
@@ -104,7 +151,7 @@ void app_update(App *a, const Input inputs[PORT_COUNT], unsigned ms) {
         if(active->buttons & BTN_START) a->audio_playing=false;
     }
     if(a->tool==TOOL_PAK) {
-        unsigned pressed=down[a->active_port];
+        unsigned pressed=down[a->active_port]|navigation[a->active_port];
         if(job->phase!=WRITE_IDLE) {
             if(!active->connected || (pressed&(BTN_B|BTN_START))) {
                 *job=(PakWrite){0}; a->pak_refresh=true;
@@ -157,6 +204,12 @@ void app_update(App *a, const Input inputs[PORT_COUNT], unsigned ms) {
             unsigned i = n==0 ? a->active_port : n-1;
             Controller *p = &a->ports[i];
             if (p->connected && p->start_armed && (p->buttons & BTN_START)) {
+                if(a->tool==TOOL_CONTROLLER && i!=a->active_port) {
+                    if(!(down[i]&BTN_START)) continue;
+                    a->active_port=i;
+                    reset_gesture(a);
+                    return;
+                }
                 a->gesture_port = i+1;
                 break;
             }

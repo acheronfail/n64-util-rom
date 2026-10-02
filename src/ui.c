@@ -144,8 +144,8 @@ static void audio_screen(const App *a) {
     }
     label(48,132,playing?2:1,playing?"PLAYING / SINE / 20%":"STOPPED / SINE / 20%");
     label(34,169,0,playing?"A  Stop":"A  Play");
-    label(34,187,1,"D-pad left/right  Channel");
-    label(34,205,1,"D-pad up/down     Frequency");
+    label(34,187,1,"Stick / D-pad: left/right Channel");
+    label(34,205,1,"Stick / D-pad: up/down Frequency");
 }
 static void pak_screen(const PakInspector *p) {
     char text[80];
@@ -228,7 +228,7 @@ static void pak_screen(const PakInspector *p) {
         label(18,190,1,text);
     }
     if(p->inconsistent) label(18,199,1,"Check notes / allocation mismatch");
-    label(18,211,1,p->count?"D-pad Scroll   B Details   A Rescan":"A Rescan");
+    label(18,211,1,p->count?"Stick/D-pad Scroll  B Details  A Rescan":"A Rescan");
 }
 static void pak_write_screen(const PakWrite *j) {
     const char *names[]={"","DELETE SAVE","REPAIR REDUNDANT COPIES","FORMAT BANK"};
@@ -302,4 +302,15 @@ void ui_draw(const App *a) {
         label(18,231,2,message);
     } else label(18,231,1,"Hold START to exit");
     if(a->hold_ms) rect(18,235,284.0f*a->hold_ms/HOLD_MS,2,MINT);
+    if(a->calibration_notice) {
+        rect(12,45,296,159,BG);
+        rect(16,49,288,151,GRID);
+        rect(17,50,286,149,PANEL);
+        label(30,73,2,"STICK CALIBRATION");
+        label(30,97,0,"N64 controllers can reset their");
+        label(30,110,0,"stick's neutral position.");
+        label(30,132,0,"Let go of the stick, then hold L + R");
+        label(30,145,0,"and press Start to reset it.");
+        label(30,181,2,"Press any button to continue");
+    }
 }
