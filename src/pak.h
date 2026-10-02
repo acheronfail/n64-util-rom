@@ -26,8 +26,7 @@ typedef struct {
 typedef struct {
     PakStatus status;
     unsigned port, stage, count, selected, free_blocks, invalid_count;
-    unsigned poll_ms, probe_stage;
-    unsigned scan_number, feedback_ms;
+    unsigned feedback_ms;
     int error_code;
     unsigned diagnostic_stage, header_copies;
     bool header_matches, toc_valid[2], diagnostic_error, all_zero, all_ff;

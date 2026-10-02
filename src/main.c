@@ -52,8 +52,8 @@ int main(void) {
        Prime the queue once; completion interrupts then keep it supplied. */
     audio_write_silence();
     rdpq_font_t *font=rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_VAR);
-    const uint32_t colors[]={0xe8eff4,0x8e9daa,0x69e0bb,0x101722};
-    for(int i=0;i<4;i++) {
+    const uint32_t colors[]={0xe8eff4,0x8e9daa,0x69e0bb,0x101722,0xff737b};
+    for(int i=0;i<5;i++) {
         rdpq_font_style(font,i,&(rdpq_fontstyle_t){
             .color=color(colors[i]),
             /* Dark pressed lettering needs a light outline on coloured caps. */

@@ -26,6 +26,7 @@ static void fixture(unsigned count) {
     free_count=123-(int)count*2; validation=0; fail_sector=fail_note=-1; reads=0;
     for(unsigned i=0;i<count;i++) {
         card[3+i/8][i%8*32]=1;
+        card[3+i/8][i%8*32+4]=1;
         entries[i]=(PakNote){.name="SAVE",.valid=true,.blocks=2,.region=0x45,.game_id=1};
     }
 }
@@ -47,10 +48,12 @@ int main(void) {
     assert(p.selected==15);
     for(int i=0;i<20;i++) pak_move(&p,-1);
     assert(!p.selected);
-    /* Same accessory type, different header or directory: discard and rescan. */
+    /* Browsing does no background reads, even after a bank change. */
+    unsigned before=reads;
     card[0][2]=99;
-    pak_tick(&p,&reader,true,2,PAK_PRESENT,false,1000);
-    for(int i=0;i<3;i++) step(&p,2,false);
+    for(int i=0;i<60;i++) pak_tick(&p,&reader,true,2,PAK_PRESENT,false,1000);
+    assert(reads==before && p.status==PAK_READY);
+    step(&p,2,true);
     assert(p.status==PAK_READING && !p.count);
     finish(&p,2);
     /* Switching port never displays the previous port's entries. */
@@ -63,6 +66,16 @@ int main(void) {
     pak_tick(&p,&reader,true,1,PAK_NO_CONTROLLER,false,16); assert(p.status==PAK_MISSING_CONTROLLER);
     fixture(0); step(&p,0,false); finish(&p,0);
     assert(!p.count && p.free_blocks==123 && !p.inconsistent);
+    /* Empty SDK slots may retain names, padding and other non-identity bytes. */
+    for(unsigned i=0;i<16;i++) memset(card[3+i/8]+i%8*32+6,0x5a,26);
+    fail_note=0; /* Empty slots must not be passed to the note decoder. */
+    step(&p,0,true); finish(&p,0);
+    assert(!p.count && !p.invalid_count && p.free_blocks==123 && !p.inconsistent);
+    /* A nonempty identity with one missing field is still shown as invalid. */
+    fixture(2);
+    card[3][0]=0; card[3][32+4]=0;
+    step(&p,0,true); finish(&p,0);
+    assert(p.count==2 && p.invalid_count==2 && p.inconsistent);
     /* Errors never leave partially scanned saves or misleading totals. */
     fixture(3); fail_note=1;
     step(&p,0,true);
@@ -71,13 +84,14 @@ int main(void) {
     fail_note=-1; step(&p,0,true); finish(&p,0);
     validation=-3;
     pak_tick(&p,&reader,true,0,PAK_PRESENT,false,1000);
-    assert(p.status==PAK_INVALID && !p.count);
-    unsigned scan=p.scan_number;
+    assert(p.status==PAK_READY);
     step(&p,0,true);
-    assert(p.status==PAK_INVALID && p.scan_number==scan+1 && p.feedback_ms==750);
+    assert(p.status==PAK_INVALID && !p.count);
+    step(&p,0,true);
+    assert(p.status==PAK_INVALID && p.feedback_ms==750);
     assert(p.error_code==-3);
     step(&p,0,false); assert(p.feedback_ms==734);
-    step(&p,0,true); assert(p.scan_number==scan+2 && p.feedback_ms==750);
+    step(&p,0,true); assert(p.feedback_ms==750);
     fixture(1); fail_sector=3; step(&p,0,true);
     for(int i=0;i<5;i++) step(&p,0,false);
     assert(p.status==PAK_IO_ERROR);

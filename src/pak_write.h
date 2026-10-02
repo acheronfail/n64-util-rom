@@ -15,7 +15,6 @@ typedef struct {
     PakWritePhase phase;
     PakWriteResult result;
     unsigned port, slot, hold_ms, repair_mask;
-    bool armed;
     char name[19];
     uint8_t before[5][256], repaired[3][256];
 } PakWrite;

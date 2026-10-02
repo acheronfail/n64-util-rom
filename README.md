@@ -83,11 +83,13 @@ vendor, and region identifiers from libdragon. These are stored metadata, not
 names resolved against a game database.
 
 Scans use one bounded read operation per frame. Header and directory signatures
-are checked again before publishing a scan, then periodically while browsing.
-A changed Pak triggers a fresh scan. Removing a controller/Pak or encountering a
+are checked again before publishing a scan. There are no periodic reads or
+automatic bank-change scans while browsing; press **A** after changing banks.
+Entering the inspector, switching controllers, or inserting a Pak starts a scan.
+Removing a controller/Pak or encountering a
 read error clears cached results. Read errors and invalid/unformatted filesystems
 are distinct states; press A to retry after addressing them. Other accessories
-are identified as not being Controller Paks. Each scan is numbered, and pressing
+are identified as not being Controller Paks. Pressing
 A highlights a rescan acknowledgement for 750 ms even when validation fails
 immediately. Validation failures show header-copy checks, both allocation-table
 checks, and all-zero/all-FF header detection from read-only sector reads. These
@@ -108,8 +110,8 @@ allocated capacity. These checks do not establish that a game's save payload is 
 - **C-down: Delete** the selected valid save note permanently.
 - **C-right: Format** the currently selected bank, erasing all its saves.
 
-Each operation first reads the bank metadata and shows a review screen. Release
-A, then **hold A for two seconds** to confirm, or **B to cancel**. Holding Start
+Each operation first reads the bank metadata and shows a review screen.
+**Hold A for two seconds** to confirm, or **B to cancel**. Holding Start
 also cancels. Keep the Pak inserted and its bank switches unchanged during the
 operation. The reviewed metadata is reread before writing; a mismatch cancels
 without writing. Writes are verified afterwards. A write or verification error
@@ -170,6 +172,14 @@ sc64deployer sd upload n64-util.z64 /CUSTOM/n64-util.z64
 
 After the command finishes, power on the N64 and select the ROM in `/CUSTOM`.
 `just build`, `just check`, and `just clean` are also available.
+
+### GitHub releases
+
+Every push to `master` runs checks, builds with the same pinned Docker toolchain,
+and publishes `n64-util.z64` as a GitHub release. The release name is the Actions
+run number (1, 2, 3, …), with tag `build-<number>`. Failed runs may leave gaps.
+The workflow can also be run manually on `master`. Reruns reuse their original
+number and leave an already published release intact.
 
 ## Run and verify
 

@@ -31,15 +31,14 @@ void pak_diagnose(PakInspector *p,unsigned sector,const uint8_t *data) {
 }
 void pak_reset(PakInspector *p) { memset(p,0,sizeof(*p)); }
 static void begin(PakInspector *p,unsigned port) {
-    unsigned number=p->scan_number+1;
     pak_reset(p); p->port=port; p->status=PAK_READING;
-    p->scan_number=number; p->feedback_ms=750;
+    p->feedback_ms=750;
     p->signature=2166136261u;
 }
 static void failure(PakInspector *p,int error) {
-    unsigned port=p->port, number=p->scan_number, feedback=p->feedback_ms;
+    unsigned port=p->port, feedback=p->feedback_ms;
     pak_reset(p); p->port=port;
-    p->scan_number=number; p->feedback_ms=feedback; p->error_code=error;
+    p->feedback_ms=feedback; p->error_code=error;
     p->status=error==-3 ? PAK_INVALID : PAK_IO_ERROR;
 }
 void pak_move(PakInspector *p,int direction) {
@@ -52,10 +51,9 @@ void pak_tick(PakInspector *p,const PakReader *r,bool enabled,unsigned port,
     if(!enabled) { pak_reset(p); return; }
     p->feedback_ms=ms>=p->feedback_ms ? 0 : p->feedback_ms-ms;
     if(presence!=PAK_PRESENT) {
-        unsigned number=p->scan_number+(refresh?1:0);
         unsigned feedback=refresh?750:p->feedback_ms;
         pak_reset(p); p->port=port;
-        p->scan_number=number; p->feedback_ms=feedback;
+        p->feedback_ms=feedback;
         p->status=presence==PAK_NO_CONTROLLER ? PAK_MISSING_CONTROLLER :
                   presence==PAK_ABSENT ? PAK_MISSING : PAK_WRONG;
         return;
@@ -65,28 +63,7 @@ void pak_tick(PakInspector *p,const PakReader *r,bool enabled,unsigned port,
         begin(p,port);
     uint8_t data[256];
     int result;
-    if(p->status==PAK_READY) {
-        /* Check header/directory identity and filesystem validity incrementally.
-           A same-type Pak swap must not leave another card's notes on screen. */
-        if(!p->probe_stage) {
-            p->poll_ms+=ms;
-            if(p->poll_ms<1000) return;
-            p->poll_ms=0;
-            result=r->validate(port);
-            if(result) { failure(p,result); return; }
-            p->probe_stage=1; p->probe_signature=2166136261u;
-            return;
-        }
-        unsigned sector=p->probe_stage==1 ? 0 : p->probe_stage+1;
-        result=r->sector(port,sector,data);
-        if(result) { failure(p,-2); return; }
-        p->probe_signature=hash(p->probe_signature,data);
-        if(++p->probe_stage==4) {
-            p->probe_stage=0;
-            if(p->probe_signature!=p->signature) begin(p,port);
-        }
-        return;
-    }
+    if(p->status==PAK_READY) return;
     if(p->status==PAK_INVALID && p->diagnostic_stage<3) {
         unsigned sector=p->diagnostic_stage++;
         result=r->sector(port,sector,data);
@@ -111,9 +88,13 @@ void pak_tick(PakInspector *p,const PakReader *r,bool enabled,unsigned port,
         if(sector>=3) memcpy(p->directory+(sector-3)*256,data,256);
     } else if(p->stage<5+PAK_SLOTS) {
         unsigned slot=p->stage-5;
-        bool occupied=false;
-        for(unsigned i=0;i<32;i++) occupied|=p->directory[slot*32+i]!=0;
-        if(occupied) {
+        const uint8_t *raw=p->directory+slot*32;
+        bool game=raw[0] || raw[1] || raw[2] || raw[3];
+        bool company=raw[4] || raw[5];
+        /* SDK deletion/repair can leave names and other bytes behind.
+           Both identity fields zero marks an empty directory slot. Keep
+           partially cleared identities visible as malformed entries. */
+        if(game || company) {
             PakNote note={0};
             result=r->note(port,slot,&note);
             if(result) { failure(p,-2); return; }
@@ -123,7 +104,7 @@ void pak_tick(PakInspector *p,const PakReader *r,bool enabled,unsigned port,
             for(unsigned i=0;i<18 && note.name[i];i++)
                 if((unsigned char)note.name[i]<32 || (unsigned char)note.name[i]>126 ||
                    note.name[i]=='$' || note.name[i]=='^') note.name[i]='?';
-            if(!note.blocks || note.blocks>PAK_BLOCKS) note.valid=false;
+            if(!game || !company || !note.blocks || note.blocks>PAK_BLOCKS) note.valid=false;
             if(!note.valid) p->invalid_count++;
             p->notes[p->count++]=note;
         }

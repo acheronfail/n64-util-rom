@@ -109,8 +109,8 @@ void app_update(App *a, const Input inputs[PORT_COUNT], unsigned ms) {
             if(!active->connected || (pressed&(BTN_B|BTN_START))) {
                 *job=(PakWrite){0}; a->pak_refresh=true;
             } else if(job->phase==WRITE_CONFIRM) {
-                if(!(active->buttons&BTN_A)) { job->armed=true; job->hold_ms=0; }
-                else if(job->armed) {
+                if(!(active->buttons&BTN_A)) job->hold_ms=0;
+                else {
                     job->hold_ms+=ms>100?100:ms;
                     if(job->hold_ms>=PAK_CONFIRM_MS) job->phase=WRITE_EXECUTE;
                 }

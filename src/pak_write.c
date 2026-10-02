@@ -63,7 +63,7 @@ void pak_write_prepare(PakWrite *j,const PakInspector *pak,const PakReader *r) {
         PakWriteResult result=pak_repair_plan((const uint8_t (*)[256])j->before,j->repaired,&j->repair_mask);
         if(result!=WRITE_OK) { finish(j,result); return; }
     } else if(j->action!=PAK_ACTION_FORMAT) { finish(j,WRITE_UNSAFE); return; }
-    j->armed=false; j->hold_ms=0; j->phase=WRITE_CONFIRM;
+    j->hold_ms=0; j->phase=WRITE_CONFIRM;
 }
 void pak_write_execute(PakWrite *j,const PakReader *r,const PakWriter *w) {
     if(j->phase!=WRITE_EXECUTE) return;

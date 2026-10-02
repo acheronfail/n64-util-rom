@@ -67,12 +67,9 @@ int main(void) {
     j=(PakWrite){.action=PAK_ACTION_REPAIR,.phase=WRITE_PREPARE};
     pak_write_prepare(&j,&pak,&reader); j.phase=WRITE_EXECUTE;
     pak_write_execute(&j,&reader,&writer); assert(j.result==WRITE_IO && writes==1);
-    /* Entry press cannot confirm; early release resets the hold; B cancels. */
+    /* Holding immediately works; early release resets the hold; B cancels. */
     App a={.testing=true,.tool=TOOL_PAK}; Input in[4]={{true,BTN_A,0,0}};
     a.pak_write=(PakWrite){.phase=WRITE_CONFIRM,.action=PAK_ACTION_FORMAT};
-    for(int i=0;i<30;i++) app_update(&a,in,100);
-    assert(a.pak_write.phase==WRITE_CONFIRM && !a.pak_write.hold_ms);
-    in[0].buttons=0; app_update(&a,in,16); in[0].buttons=BTN_A;
     for(int i=0;i<19;i++) app_update(&a,in,100);
     assert(a.pak_write.phase==WRITE_CONFIRM && a.pak_write.hold_ms==1900);
     in[0].buttons=0; app_update(&a,in,16); assert(!a.pak_write.hold_ms);

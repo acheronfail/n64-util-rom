@@ -12,7 +12,7 @@ void triangle(float x,float y,float xx,float yy,float xxx,float yyy,uint32_t c) 
     printf("<path d='M%g %g L%g %g L%g %gZ' fill='#%06x'/>\n",x,y,xx,yy,xxx,yyy,c);
 }
 void label(float x,float y,int style,const char *s) {
-    const unsigned colors[]={0xe8eff4,0x8e9daa,0x69e0bb,0x101722};
+    const unsigned colors[]={0xe8eff4,0x8e9daa,0x69e0bb,0x101722,0xff737b};
     printf("<text x='%g' y='%g' font-family='monospace' font-size='7' fill='#%06x' stroke='#%06x' stroke-width='0.6' paint-order='stroke'>",x,y,colors[style],style==3?0xe8eff4:0x101722);
     for(;*s;s++) {
         if(*s=='&') fputs("&amp;",stdout);
@@ -23,7 +23,7 @@ void label(float x,float y,int style,const char *s) {
     puts("</text>");
 }
 void button_label(float x,float y,int style,char glyph) {
-    const unsigned colors[]={0xe8eff4,0x8e9daa,0x69e0bb,0x101722};
+    const unsigned colors[]={0xe8eff4,0x8e9daa,0x69e0bb,0x101722,0xff737b};
     printf("<text x='%g' y='%g' text-anchor='middle' "
            "font-family='monospace' font-size='7' fill='#%06x' stroke='#%06x' "
            "stroke-width='0.6' paint-order='stroke'>%c</text>\n",
@@ -76,7 +76,7 @@ int main(int argc,char **argv) {
         if(!strcmp(argv[1],"pak-error")) a.pak.status=PAK_IO_ERROR;
         if(!strcmp(argv[1],"pak-invalid")) {
             a.pak.status=PAK_INVALID; a.pak.error_code=-3;
-            a.pak.scan_number=3; a.pak.feedback_ms=600;
+            a.pak.feedback_ms=600;
             a.pak.diagnostic_stage=3; a.pak.header_matches=true; a.pak.all_ff=true;
         }
         if(!strcmp(argv[1],"pak-reading")) { a.pak.status=PAK_READING; a.pak.stage=11; }

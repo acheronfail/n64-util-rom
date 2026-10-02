@@ -8,6 +8,7 @@
 #define MUTED 0x657585
 #define WHITE 0xe8eff4
 #define MINT 0x69e0bb
+#define RED 0xff737b
 static void line(float x,float y,float xx,float yy,float width,uint32_t c) {
     float dx=xx-x, dy=yy-y, len=sqrtf(dx*dx+dy*dy);
     if (len < .01f) return;
@@ -149,10 +150,9 @@ static void audio_screen(const App *a) {
 static void pak_screen(const PakInspector *p) {
     char text[80];
     label(18,43,1,"READ ONLY");
-    if(p->scan_number) {
-        snprintf(text,sizeof(text),"%s #%u",p->feedback_ms?"Rescan":"Scan",p->scan_number);
-        if(p->feedback_ms) rect(190,33,112,14,GRID);
-        label(196,43,p->feedback_ms?2:1,text);
+    if(p->feedback_ms) {
+        rect(190,33,112,14,GRID);
+        label(196,43,2,"Rescan");
     }
     if(p->status!=PAK_READY) {
         const char *message="Reading Controller Pak...";
@@ -232,7 +232,8 @@ static void pak_screen(const PakInspector *p) {
 }
 static void pak_write_screen(const PakWrite *j) {
     const char *names[]={"","DELETE SAVE","REPAIR REDUNDANT COPIES","FORMAT BANK"};
-    label(18,51,2,names[j->action]);
+    bool danger=j->action==PAK_ACTION_FORMAT || j->action==PAK_ACTION_DELETE;
+    label(18,51,danger?4:2,names[j->action]);
     char text[64];
     snprintf(text,sizeof(text),"Controller P%u / selected bank",j->port+1);
     label(18,72,1,text);
@@ -249,18 +250,17 @@ static void pak_write_screen(const PakWrite *j) {
         label(18,98,0,text);
         label(18,121,1,"This save will be permanently deleted.");
     } else if(j->action==PAK_ACTION_FORMAT) {
-        label(18,101,0,"ALL saves on this bank will be erased.");
-        label(18,122,1,"Other banks are not selected by the ROM.");
+        label(18,101,4,"ALL saves on this bank will be erased.");
     } else {
         snprintf(text,sizeof(text),"Restore:%s%s%s",j->repair_mask&1?" header":"",
                  j->repair_mask&2?" table 1":"",j->repair_mask&4?" table 2":"");
         label(18,101,0,text);
         label(18,122,1,"Copies metadata; does not recover saves.");
     }
-    label(18,151,1,"Do not remove Pak or change banks.");
-    label(18,174,0,"Release A, then hold A for 2s to confirm");
+    label(18,174,danger?4:0,"Hold A to confirm");
     label(18,193,1,"B  Cancel");
-    if(j->hold_ms) rect(18,204,284.0f*j->hold_ms/PAK_CONFIRM_MS,3,MINT);
+    rect(18,204,284,3,danger?0x542c37:GRID);
+    if(j->hold_ms) rect(18,204,284.0f*j->hold_ms/PAK_CONFIRM_MS,3,danger?RED:MINT);
 }
 void ui_draw(const App *a) {
     rect(0,0,320,240,BG);
