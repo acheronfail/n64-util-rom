@@ -6,6 +6,8 @@ implementation; it does not reuse that project's source or artwork.
 
 The compact main menu contains **Controller test**, **Rumble Pak test**,
 **Audio test**, and **Controller Pak**. Navigate with D-pad up/down; A or Start opens the selected test.
+Below the menu options, an indicator shows **Expansion Pak: detected** in the primary text colour with a green light
+or **Expansion Pak: not detected** in grey, using libdragon's startup memory detection.
 
 - Large raw joystick plot with an octagonal reference, continuous movement trail,
   signed X/Y readings, and observed minimum/maximum values.

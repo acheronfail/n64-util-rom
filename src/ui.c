@@ -273,6 +273,9 @@ void ui_draw(const App *a) {
             label(76,y+14,selected?2:1,selected?">":" ");
             label(89,y+14,selected?2:1,items[i]);
         }
+        circle(70,190,3,a->expansion_pak_detected?MINT:MUTED);
+        label(80,193,a->expansion_pak_detected?0:1,
+              a->expansion_pak_detected?"Expansion Pak: detected":"Expansion Pak: not detected");
         return;
     }
     const char *titles[]={"CONTROLLER TEST","RUMBLE PAK TEST","AUDIO TEST","CONTROLLER PAK"};

@@ -30,6 +30,7 @@ typedef struct {
 } Controller;
 typedef struct {
     bool testing, controls_armed, audio_playing, pak_refresh;
+    bool expansion_pak_detected;
     bool calibration_notice;
     PakInspector pak;
     PakWrite pak_write;

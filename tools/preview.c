@@ -36,7 +36,8 @@ static void update(App *a,bool connected,uint16_t buttons,int x,int y,unsigned m
 int main(int argc,char **argv) {
     App a={0};
     update(&a,true,0,0,0,16);
-    if(argc>1 && strcmp(argv[1],"menu")) {
+    if(argc>1 && !strcmp(argv[1],"menu-expanded")) a.expansion_pak_detected=true;
+    if(argc>1 && strcmp(argv[1],"menu") && strcmp(argv[1],"menu-expanded")) {
         update(&a,true,BTN_A,0,0,16);
         update(&a,true,0,0,0,16);
         update(&a,true,BTN_A,0,0,16);

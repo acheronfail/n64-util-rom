@@ -11,6 +11,6 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc src/app.c src/pak.c tests/pak_
 cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc src/app.c src/pak.c src/pak_write.c tests/pak_write_test.c -o build/pak-write-test
 ./build/pak-write-test
 cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc src/app.c src/pak.c src/ui.c tools/preview.c -lm -o build/preview
-for state in menu calibration test disconnected all switch rumble rumble-missing audio pak pak-details pak-empty pak-error pak-reading pak-last pak-invalid pak-format; do
+for state in menu menu-expanded calibration test disconnected all switch rumble rumble-missing audio pak pak-details pak-empty pak-error pak-reading pak-last pak-invalid pak-format; do
     ./build/preview "$state" > "build/preview-$state.svg"
 done

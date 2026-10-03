@@ -61,7 +61,7 @@ int main(void) {
         });
     }
     rdpq_text_register_font(1,font);
-    App app={0};
+    App app={.expansion_pak_detected=is_memory_expanded()};
     uint64_t previous=get_ticks();
     while(1) {
         surface_t *frame=display_get();
